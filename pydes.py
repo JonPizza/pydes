@@ -39,8 +39,9 @@ E = [32, 1, 2, 3, 4, 5,
      28, 29, 30, 31, 32, 1]
 
 #SBOX
-S_BOX = [
-         
+#S_BOX = 
+def gen_sbox_from_key(key): 
+      return [
 [[14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
  [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
  [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
@@ -141,21 +142,21 @@ class des():
         self.keys = list()
         
     def run(self, key, text, action=ENCRYPT, padding=False):
-        if len(key) < 8:
+        if len(key) < 16:
             raise "Key Should be 8 bytes long"
-        elif len(key) > 8:
-            key = key[:8] #If key size is above 8bytes, cut to be 8bytes long
+        elif len(key) > 16:
+            key = key[:16] #If key size is above 8bytes, cut to be 8bytes long
         
         self.password = key
         self.text = text
         
         if padding and action==ENCRYPT:
             self.addPadding()
-        elif len(self.text) % 8 != 0:#If not padding specified data size must be multiple of 8 bytes
-            raise "Data size should be multiple of 8"
+        elif len(self.text) % 16 != 0:#If not padding specified data size must be multiple of 8 bytes
+            raise "Data size should be multiple of 16"
         
         self.generatekeys() #Generate all the keys
-        text_blocks = nsplit(self.text, 8) #Split the text in blocks of 8 bytes so 64 bits
+        text_blocks = nsplit(self.text, 16) #Split the text in blocks of 8 bytes so 64 bits
         result = list()
         for block in text_blocks:#Loop over all the blocks of data
             block = string_to_bit_array(block)#Convert the block in bit array
@@ -205,8 +206,8 @@ class des():
         self.keys = []
         key = string_to_bit_array(self.password)
         key = self.permut(key, CP_1) #Apply the initial permut on the key
-        g, d = nsplit(key, 28) #Split it in to (g->LEFT),(d->RIGHT)
-        for i in range(16):#Apply the 16 rounds
+        g, d = nsplit(key, 56) #Split it in to (g->LEFT),(d->RIGHT)
+        for i in range(32):#Apply the 16 rounds
             g, d = self.shift(g, d, SHIFT[i]) #Apply the shift associated with the round (not always 1)
             tmp = g + d #Merge them
             self.keys.append(self.permut(tmp, CP_2)) #Apply the permut to get the Ki
@@ -215,7 +216,7 @@ class des():
         return g[n:] + g[:n], d[n:] + d[:n]
     
     def addPadding(self):#Add padding to the datas using PKCS5 spec.
-        pad_len = 8 - (len(self.text) % 8)
+        pad_len = 16 - (len(self.text) % 16)
         self.text += pad_len * chr(pad_len)
     
     def removePadding(self, data):#Remove the padding of the plain text (it assume there is padding)
